@@ -1,0 +1,239 @@
+{
+  "examples": {
+    "user_read": {
+      "description": "Esempio di risposta GET /users/{id}",
+      "data": {
+        "id": 1,
+        "username": "proGamer",
+        "email": "pro@email.com"
+      }
+    },
+    "user_create_request": {
+      "description": "Esempio di richiesta POST /users",
+      "data": {
+        "username": "proGamer",
+        "email": "pro@email.com",
+        "password": "SecurePass123!"
+      }
+    },
+    "game_read": {
+      "description": "Esempio di risposta GET /games/{id}",
+      "data": {
+        "id": 2,
+        "name": "League of Legends",
+        "genre": "MOBA"
+      }
+    },
+    "game_alternatives": {
+      "description": "Ulteriori esempi di giochi",
+      "data": [
+        {
+          "id": 3,
+          "name": "Valorant",
+          "genre": "Tactical Shooter"
+        },
+        {
+          "id": 4,
+          "name": "Counter-Strike 2",
+          "genre": "FPS"
+        },
+        {
+          "id": 5,
+          "name": "Dota 2",
+          "genre": "MOBA"
+        }
+      ]
+    },
+    "team_read": {
+      "description": "Esempio di risposta GET /teams/{id} con membri",
+      "data": {
+        "id": 10,
+        "name": "NightRaiders",
+        "creator_id": 1,
+        "members": [
+          {
+            "user_id": 1,
+            "username": "proGamer"
+          },
+          {
+            "user_id": 2,
+            "username": "shadowNinja"
+          },
+          {
+            "user_id": 3,
+            "username": "fireStorm"
+          }
+        ]
+      }
+    },
+    "team_create_request": {
+      "description": "Esempio di richiesta POST /teams",
+      "data": {
+        "name": "NightRaiders",
+        "creator_id": 1
+      }
+    },
+    "team_alternatives": {
+      "description": "Ulteriori esempi di team",
+      "data": [
+        {
+          "id": 11,
+          "name": "ShadowForce",
+          "creator_id": 2,
+          "members": []
+        },
+        {
+          "id": 12,
+          "name": "PhoenixRising",
+          "creator_id": 3,
+          "members": []
+        }
+      ]
+    },
+    "match_read": {
+      "description": "Esempio di risposta GET /matches/{id}",
+      "data": {
+        "id": 100,
+        "scheduled_at": "2026-06-01T18:00:00",
+        "game_id": 2,
+        "team1_id": 10,
+        "team2_id": 11
+      }
+    },
+    "match_create_request": {
+      "description": "Esempio di richiesta POST /matches",
+      "data": {
+        "scheduled_at": "2026-06-01T18:00:00",
+        "game_id": 2,
+        "team1_id": 10,
+        "team2_id": 11
+      }
+    },
+    "match_alternatives": {
+      "description": "Ulteriori esempi di partite",
+      "data": [
+        {
+          "id": 101,
+          "scheduled_at": "2026-06-01T20:30:00",
+          "game_id": 3,
+          "team1_id": 12,
+          "team2_id": 10
+        },
+        {
+          "id": 102,
+          "scheduled_at": "2026-06-02T19:00:00",
+          "game_id": 4,
+          "team1_id": 11,
+          "team2_id": 12
+        }
+      ]
+    },
+    "team_membership_read": {
+      "description": "Esempio di appartenenza a un team",
+      "data": {
+        "id": 1,
+        "user_id": 1,
+        "team_id": 10
+      }
+    },
+    "user_with_teams_extended": {
+      "description": "Esempio di risposta estesa: Utente con team",
+      "data": {
+        "id": 1,
+        "username": "proGamer",
+        "email": "pro@email.com",
+        "teams": [
+          {
+            "id": 10,
+            "name": "NightRaiders",
+            "creator_id": 1,
+            "members": []
+          },
+          {
+            "id": 15,
+            "name": "EliteSquad",
+            "creator_id": 1,
+            "members": []
+          }
+        ]
+      }
+    },
+    "match_with_details_extended": {
+      "description": "Esempio di risposta estesa: Match con dettagli completi",
+      "data": {
+        "id": 100,
+        "scheduled_at": "2026-06-01T18:00:00",
+        "game_id": 2,
+        "team1_id": 10,
+        "team2_id": 11,
+        "game": {
+          "id": 2,
+          "name": "League of Legends",
+          "genre": "MOBA"
+        },
+        "team1": {
+          "id": 10,
+          "name": "NightRaiders",
+          "creator_id": 1,
+          "members": []
+        },
+        "team2": {
+          "id": 11,
+          "name": "ShadowForce",
+          "creator_id": 2,
+          "members": []
+        }
+      }
+    }
+  },
+  "endpoints_mvp": {
+    "users": {
+      "POST /users": {
+        "description": "Crea un nuovo utente",
+        "request": {
+          "username": "proGamer",
+          "email": "pro@email.com",
+          "password": "SecurePass123!"
+        },
+        "response": {
+          "id": 1,
+          "username": "proGamer",
+          "email": "pro@email.com"
+        }
+      }
+    },
+    "teams": {
+      "POST /teams": {
+        "description": "Crea un nuovo team",
+        "request": {
+          "name": "NightRaiders",
+          "creator_id": 1
+        },
+        "response": {
+          "id": 10,
+          "name": "NightRaiders",
+          "creator_id": 1,
+          "members": []
+        }
+      }
+    },
+    "matches": {
+      "POST /matches": {
+        "description": "Crea una nuova partita",
+        "request": {
+          "scheduled_at": "2026-06-01T18:00:00",
+          "game_id": 2,
+          "team1_id": 10,
+          "team2_id": 11
+        },
+        "response": {
+          "id": 100,
+          "scheduled_at": "2026-06-01T18:00:00",
+          "game_id": 2,
+          "team1_id": 10,
+          "team2_id": 11
+        }
+      }
+    }
+  }
+}
