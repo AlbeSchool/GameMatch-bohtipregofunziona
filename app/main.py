@@ -9,7 +9,7 @@ import json
 import secrets
 from pathlib import Path
 from fastapi import FastAPI, Depends, Form, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -65,6 +65,37 @@ ACTIVE_SESSIONS: dict[str, int] = {}
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+PUBLIC_PATHS = {
+    "/login",
+    "/login/submit",
+    "/register",
+    "/register/submit",
+}
+
+
+def _is_public_path(path: str) -> bool:
+    if path in PUBLIC_PATHS:
+        return True
+    if path.startswith("/static"):
+        return True
+    return False
+
+
+@app.middleware("http")
+async def require_login_middleware(request: Request, call_next):
+    path = request.url.path
+    if _is_public_path(path):
+        return await call_next(request)
+
+    token = request.cookies.get("session_token")
+    if token and token in ACTIVE_SESSIONS:
+        return await call_next(request)
+
+    if path.startswith("/api/"):
+        return JSONResponse(status_code=401, content={"detail": "Authentication required"})
+
+    return RedirectResponse(url="/login", status_code=302)
 
 
 def _generate_unique_operation_id(route: APIRoute) -> str:
