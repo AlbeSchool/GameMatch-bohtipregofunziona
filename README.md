@@ -68,7 +68,7 @@ Servizi:
 
 Alla partenza il database viene inizializzato e popolato con utenti di test.
 
-- admin: `Russo` / `1234`
+- admin: `Russo` / `1234.abcd`
 - utenti standard: `Marco`, `Sofia`, `Luca`, `Emma`, `Alex` (password `password123`)
 - team creator: `TeamAlphaAdmin`, `TeamBravoAdmin`, `TeamDeltaAdmin` (password `creator123`)
 - sono presenti anche altri 20 utenti demo e 30 richieste matchmaking generate all'avvio

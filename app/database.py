@@ -60,16 +60,22 @@ def ensure_schema_compatibility() -> None:
 
 def seed_users() -> None:
     """Popola il database con utenti di default"""
-    from app.auth import create_user, get_user_by_username
+    from app.auth import create_user, get_user_by_username, hash_password, verify_password
     from app.models import TeamRequest, User
     
     db = SessionLocal()
     
+    desired_admin_password = "1234.abcd"
+
     # Admin user
     admin = get_user_by_username(db, "Russo")
     if not admin:
-        create_user(db, "Russo", "russo@admin.com", "1234", is_admin=1)
-        print("✅ Admin user created: Russo / 1234")
+        create_user(db, "Russo", "russo@admin.com", desired_admin_password, is_admin=1)
+        print("✅ Admin user created: Russo")
+    elif not verify_password(desired_admin_password, admin.password):
+        admin.password = hash_password(desired_admin_password)
+        db.commit()
+        print("✅ Admin password updated: Russo")
     
     # Regular users
     test_users = [
@@ -117,6 +123,13 @@ def seed_users() -> None:
             creator.is_team_creator = 1
             db.commit()
             print(f"✅ Team creator role updated: {username}")
+
+    # Hardening: normalizza eventuali password non cifrate rimaste in DB.
+    all_users = db.query(User).all()
+    for user in all_users:
+        if not user.password.startswith("$2"):
+            user.password = hash_password(user.password)
+    db.commit()
 
     users_by_username = {user.username: user for user in db.query(User).all()}
 

@@ -758,17 +758,6 @@ def login_page() -> HTMLResponse:
                     margin-bottom: 16px;
                     font-size: 0.9rem;
                 }
-                .test-users {
-                    background: rgba(103, 232, 249, 0.1);
-                    border: 1px solid rgba(103, 232, 249, 0.2);
-                    border-radius: 12px;
-                    padding: 12px;
-                    margin-top: 24px;
-                    font-size: 0.85rem;
-                }
-                .test-users strong {
-                    color: var(--accent);
-                }
             </style>
         </head>
         <body>
@@ -790,15 +779,6 @@ def login_page() -> HTMLResponse:
 
                 <div class="link">
                     Non hai un account? <a href="/register">Registrati</a>
-                </div>
-
-                <div class="test-users">
-                    <strong>Utenti di prova:</strong><br>
-                    <strong>Admin:</strong> Russo / 1234<br>
-                    <br>
-                    <strong>Utenti normali:</strong><br>
-                    Marco, Sofia, Luca, Emma, Alex<br>
-                    <strong>Password:</strong> password123
                 </div>
             </main>
         </body>
