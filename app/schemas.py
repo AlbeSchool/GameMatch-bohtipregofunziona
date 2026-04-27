@@ -6,7 +6,7 @@ Classe: 5WDINF
 Anno: 2025/2026
 """
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -25,14 +25,37 @@ class UserCreate(UserBase):
     """Modello di input per la creazione di un utente (POST /users)"""
     password: str = Field(..., min_length=6)
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "username": "proGamer",
+                    "email": "pro@email.com",
+                    "password": "SecurePass123!",
+                }
+            ]
+        }
+    )
+
 
 class UserRead(UserBase):
     """Modello di output per la lettura di un utente (GET /users/{id})"""
     id: int
     is_admin: int = 0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": 1,
+                    "username": "proGamer",
+                    "email": "pro@email.com",
+                    "is_admin": 0,
+                }
+            ]
+        },
+    )
 
 
 # ============================================================================
@@ -47,15 +70,27 @@ class GameBase(BaseModel):
 
 class GameCreate(GameBase):
     """Modello di input per la creazione di un gioco (POST /games)"""
-    pass
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"name": "Valorant", "genre": "Tactical Shooter"}
+            ]
+        }
+    )
 
 
 class GameRead(GameBase):
     """Modello di output per la lettura di un gioco (GET /games/{id})"""
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {"id": 2, "name": "Valorant", "genre": "Tactical Shooter"}
+            ]
+        },
+    )
 
 
 # ============================================================================
@@ -70,6 +105,14 @@ class TeamBase(BaseModel):
 class TeamCreate(TeamBase):
     """Modello di input per la creazione di un team (POST /teams)"""
     creator_id: int
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"name": "NightRaiders", "creator_id": 1}
+            ]
+        }
+    )
 
 
 class TeamMembershipRead(BaseModel):
@@ -87,8 +130,22 @@ class TeamRead(TeamBase):
     creator_id: int
     members: Optional[List[TeamMembershipRead]] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": 10,
+                    "name": "NightRaiders",
+                    "creator_id": 1,
+                    "members": [
+                        {"user_id": 1, "username": "proGamer"},
+                        {"user_id": 2, "username": "shadowNinja"},
+                    ],
+                }
+            ]
+        },
+    )
 
 
 # ============================================================================
@@ -128,7 +185,18 @@ class MatchBase(BaseModel):
 
 class MatchCreate(MatchBase):
     """Modello di input per la creazione di una partita (POST /matches)"""
-    pass
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "scheduled_at": "2026-06-01T18:00:00",
+                    "game_id": 2,
+                    "team1_id": 10,
+                    "team2_id": 11,
+                }
+            ]
+        }
+    )
 
 
 class MatchRead(MatchBase):
@@ -138,8 +206,20 @@ class MatchRead(MatchBase):
     team1: Optional["TeamRead"] = None
     team2: Optional["TeamRead"] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": 100,
+                    "scheduled_at": "2026-06-01T18:00:00",
+                    "game_id": 2,
+                    "team1_id": 10,
+                    "team2_id": 11,
+                }
+            ]
+        },
+    )
 
 
 # ============================================================================
@@ -213,6 +293,14 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"username": "Russo", "password": "1234"}
+            ]
+        }
+    )
+
 
 class LoginResponse(BaseModel):
     """Schema per login response"""
@@ -222,6 +310,20 @@ class LoginResponse(BaseModel):
     is_admin: int
     message: str
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": 1,
+                    "username": "Russo",
+                    "email": "russo@admin.com",
+                    "is_admin": 1,
+                    "message": "Login effettuato con successo",
+                }
+            ]
+        }
+    )
+
 
 class RegisterRequest(BaseModel):
     """Schema per registrazione"""
@@ -230,6 +332,19 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=6)
     confirm_password: str = Field(..., min_length=6)
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "username": "newPlayer",
+                    "email": "newplayer@email.com",
+                    "password": "StrongPass123!",
+                    "confirm_password": "StrongPass123!",
+                }
+            ]
+        }
+    )
+
 
 class RegisterResponse(BaseModel):
     """Schema per risposta registrazione"""
@@ -237,3 +352,16 @@ class RegisterResponse(BaseModel):
     username: str
     email: str
     message: str
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": 42,
+                    "username": "newPlayer",
+                    "email": "newplayer@email.com",
+                    "message": "Registrazione completata con successo",
+                }
+            ]
+        }
+    )

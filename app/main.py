@@ -28,7 +28,21 @@ from app.models import (
 )
 
 
-app = FastAPI(title="GameMatch", version="1.0.0")
+app = FastAPI(
+    title="GameMatch",
+    version="1.0.0",
+    description=(
+        "API FastAPI per GameMatch con autenticazione, dashboard, richieste matchmaking "
+        "e strumenti tecnici per ispezionare database ed esempi schema."
+    ),
+    openapi_tags=[
+        {"name": "utility", "description": "Endpoint tecnici e di supporto."},
+        {"name": "auth", "description": "Login, registrazione e logout."},
+        {"name": "matchmaking", "description": "Richieste utente e matchmaking."},
+        {"name": "creator", "description": "Funzioni per team creator."},
+        {"name": "admin", "description": "Pannello amministrativo."},
+    ],
+)
 ACTIVE_SESSIONS: dict[str, int] = {}
 
 
@@ -317,7 +331,12 @@ def login_page() -> HTMLResponse:
     return HTMLResponse(content=html)
 
 
-@app.post("/login/submit")
+@app.post(
+    "/login/submit",
+    tags=["auth"],
+    summary="Autentica un utente",
+    description="Riceve username e password dal form HTML e crea la sessione nel cookie.",
+)
 def login_submit(
     username: str = Form(...),
     password: str = Form(...),
@@ -363,7 +382,12 @@ def login_submit(
     return response
 
 
-@app.get("/logout")
+@app.get(
+    "/logout",
+    tags=["auth"],
+    summary="Termina la sessione",
+    description="Rimuove il cookie di sessione e disconnette l'utente corrente.",
+)
 def logout(request: Request) -> RedirectResponse:
     token = request.cookies.get("session_token")
     if token and token in ACTIVE_SESSIONS:
@@ -511,7 +535,12 @@ def register_page() -> HTMLResponse:
     return HTMLResponse(content=html)
 
 
-@app.post("/register/submit")
+@app.post(
+    "/register/submit",
+    tags=["auth"],
+    summary="Registra un nuovo utente",
+    description="Valida i dati del form di registrazione e crea un account GameMatch.",
+)
 def register_submit(
     username: str = Form(...),
     email: str = Form(...),
@@ -974,7 +1003,12 @@ def health() -> HTMLResponse:
     return HTMLResponse(content=html)
 
 
-@app.get("/health/json")
+@app.get(
+    "/health/json",
+    tags=["utility"],
+    summary="Stato tecnico JSON",
+    description="Restituisce un payload minimale per i controlli automatici e i monitoraggi.",
+)
 def health_json() -> dict[str, str]:
     """Health check in JSON"""
     return {"status": "ok"}
@@ -986,7 +1020,12 @@ def status() -> HTMLResponse:
     return health()
 
 
-@app.get("/tables")
+@app.get(
+    "/tables",
+    tags=["utility"],
+    summary="Elenca tabelle e colonne",
+    description="Restituisce i nomi delle tabelle e la definizione delle colonne lette dal database.",
+)
 def tables() -> dict[str, object]:
     """Liste tutte le tabelle del database con i loro schemi"""
     inspector = inspect(engine)
@@ -1008,7 +1047,12 @@ def tables() -> dict[str, object]:
     return {"database": table_names, "tables": tables_info}
 
 
-@app.get("/examples")
+@app.get(
+    "/examples",
+    tags=["utility"],
+    summary="Esempi di risposta schema",
+    description="Mostra esempi JSON pronti per verificare gli schemi Pydantic principali.",
+)
 def examples() -> dict[str, object]:
     """Esempi di risposta per verificare gli schemi Pydantic"""
     return {
@@ -1454,7 +1498,12 @@ def dashboard(request: Request, user_id: Optional[int] = None, db: Session = Dep
     return HTMLResponse(content=html)
 
 
-@app.post("/creator/request")
+@app.post(
+    "/creator/request",
+    tags=["creator"],
+    summary="Richiedi il ruolo di team creator",
+    description="Registra una richiesta pendente per abilitare l'account creator.",
+)
 def request_creator_role(
     message: str = Form(""),
     request: Request = None,
@@ -1723,7 +1772,12 @@ def request_new(game: str, request: Request, db: Session = Depends(get_db)) -> H
     return HTMLResponse(content=html)
 
 
-@app.post("/admin/users/{target_user_id}/update")
+@app.post(
+    "/admin/users/{target_user_id}/update",
+    tags=["admin"],
+    summary="Aggiorna un utente",
+    description="Permette all'admin di modificare username ed email di un account non amministrativo.",
+)
 def admin_update_user(
     target_user_id: int,
     username: str = Form(...),
@@ -1752,7 +1806,12 @@ def admin_update_user(
     return RedirectResponse(url="/dashboard", status_code=302)
 
 
-@app.post("/admin/users/{target_user_id}/delete")
+@app.post(
+    "/admin/users/{target_user_id}/delete",
+    tags=["admin"],
+    summary="Elimina un utente",
+    description="Rimuove un account non amministrativo dal database.",
+)
 def admin_delete_user(
     target_user_id: int,
     request: Request,
@@ -1773,7 +1832,12 @@ def admin_delete_user(
     return RedirectResponse(url="/dashboard", status_code=302)
 
 
-@app.post("/admin/users/{target_user_id}/set-creator")
+@app.post(
+    "/admin/users/{target_user_id}/set-creator",
+    tags=["admin"],
+    summary="Promuovi a team creator",
+    description="Imposta il flag team creator per un utente non amministrativo.",
+)
 def admin_set_creator(target_user_id: int, request: Request, db: Session = Depends(get_db)):
     admin = _get_user_from_session(request, db)
     if not admin or not admin.is_admin:
@@ -1790,7 +1854,12 @@ def admin_set_creator(target_user_id: int, request: Request, db: Session = Depen
     return RedirectResponse(url="/dashboard", status_code=302)
 
 
-@app.post("/admin/users/{target_user_id}/unset-creator")
+@app.post(
+    "/admin/users/{target_user_id}/unset-creator",
+    tags=["admin"],
+    summary="Rimuovi il ruolo creator",
+    description="Disattiva il ruolo team creator per un utente non amministrativo.",
+)
 def admin_unset_creator(target_user_id: int, request: Request, db: Session = Depends(get_db)):
     admin = _get_user_from_session(request, db)
     if not admin or not admin.is_admin:
@@ -1807,7 +1876,12 @@ def admin_unset_creator(target_user_id: int, request: Request, db: Session = Dep
     return RedirectResponse(url="/dashboard", status_code=302)
 
 
-@app.post("/admin/creator-requests/{request_id}/approve")
+@app.post(
+    "/admin/creator-requests/{request_id}/approve",
+    tags=["admin"],
+    summary="Approva una richiesta creator",
+    description="Approva la richiesta e abilita l'utente come team creator.",
+)
 def approve_creator_request(request_id: int, request: Request, db: Session = Depends(get_db)):
     admin = _get_user_from_session(request, db)
     if not admin or not admin.is_admin:
@@ -1826,7 +1900,12 @@ def approve_creator_request(request_id: int, request: Request, db: Session = Dep
     return RedirectResponse(url="/dashboard", status_code=302)
 
 
-@app.post("/admin/creator-requests/{request_id}/reject")
+@app.post(
+    "/admin/creator-requests/{request_id}/reject",
+    tags=["admin"],
+    summary="Rifiuta una richiesta creator",
+    description="Rifiuta la richiesta e aggiorna lo stato di revisione.",
+)
 def reject_creator_request(request_id: int, request: Request, db: Session = Depends(get_db)):
     admin = _get_user_from_session(request, db)
     if not admin or not admin.is_admin:
@@ -1843,7 +1922,12 @@ def reject_creator_request(request_id: int, request: Request, db: Session = Depe
     return RedirectResponse(url="/dashboard", status_code=302)
 
 
-@app.post("/creator/request/{request_id}/ack")
+@app.post(
+    "/creator/request/{request_id}/ack",
+    tags=["creator"],
+    summary="Conferma notifica richiesta",
+    description="Marca come letta la notifica relativa a una richiesta creator approvata o respinta.",
+)
 def creator_request_ack(request_id: int, request: Request, db: Session = Depends(get_db)):
     user = _get_user_from_session(request, db)
     if not user:
@@ -1858,7 +1942,12 @@ def creator_request_ack(request_id: int, request: Request, db: Session = Depends
     return RedirectResponse(url="/dashboard", status_code=302)
 
 
-@app.post("/request/submit")
+@app.post(
+    "/request/submit",
+    tags=["matchmaking"],
+    summary="Invia una richiesta matchmaking",
+    description="Salva una richiesta utente con gioco, rank e ruolo e suggerisce un team compatibile.",
+)
 def submit_request(
     game: str = Form(...),
     rank: str = Form(...),
