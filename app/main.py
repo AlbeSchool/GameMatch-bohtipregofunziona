@@ -7,10 +7,12 @@ from datetime import datetime
 from typing import Optional
 import json
 import secrets
+from pathlib import Path
 from fastapi import FastAPI, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.routing import APIRoute
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import inspect
@@ -45,6 +47,7 @@ from app.models import (
 app = FastAPI(
     title="GameMatch",
     version="1.0.0",
+    docs_url=None,
     description=(
         "API FastAPI per GameMatch con autenticazione, dashboard, richieste matchmaking "
         "e strumenti tecnici per ispezionare database ed esempi schema."
@@ -59,6 +62,9 @@ app = FastAPI(
     generate_unique_id_function=lambda route: _generate_unique_operation_id(route),
 )
 ACTIVE_SESSIONS: dict[str, int] = {}
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 def _generate_unique_operation_id(route: APIRoute) -> str:
@@ -312,6 +318,16 @@ def custom_openapi() -> dict[str, object]:
 
 
 app.openapi = custom_openapi
+
+
+@app.get("/docs", include_in_schema=False)
+def custom_swagger_ui() -> HTMLResponse:
+    """Swagger UI con colori personalizzati per i metodi HTTP."""
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=f"{app.title} - Swagger UI",
+        swagger_css_url="/static/swagger-custom.css",
+    )
 
 
 GAME_OPTIONS = ["Valorant", "Rainbow Six Siege", "Fortnite", "Rocket League"]
