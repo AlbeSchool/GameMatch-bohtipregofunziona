@@ -64,6 +64,25 @@ Servizi:
 - `db`: PostgreSQL 15
 - `backend`: FastAPI + Uvicorn su porta 8000
 
+## Deploy Automatico Webdock
+
+Il repository include il workflow GitHub Actions `.github/workflows/deploy-webdock.yml`.
+Ad ogni push su `main` (o trigger manuale) esegue deploy automatico sul VPS:
+
+1. `git pull --ff-only origin main`
+2. `pip install -r requirements.txt` nel venv
+3. `systemctl restart gamematch.service`
+4. health check su `/health/json`
+
+Configura queste Secrets in GitHub (Settings > Secrets and variables > Actions):
+
+- `WEBDOCK_HOST` (esempio: `45.148.31.191`)
+- `WEBDOCK_USER` (esempio: `admin`)
+- `WEBDOCK_SSH_KEY` (chiave privata SSH)
+- `WEBDOCK_PORT` (esempio: `22`)
+
+Prerequisito sul VPS: il comando `sudo systemctl restart gamematch.service` deve poter essere eseguito senza prompt password dall'utente usato in SSH.
+
 ## Credenziali Seed (sviluppo)
 
 Alla partenza il database viene inizializzato e popolato con utenti di test.
