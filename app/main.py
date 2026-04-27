@@ -10,6 +10,8 @@ import secrets
 from fastapi import FastAPI, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.utils import get_openapi
+from fastapi.routing import APIRoute
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
@@ -42,8 +44,221 @@ app = FastAPI(
         {"name": "creator", "description": "Funzioni per team creator."},
         {"name": "admin", "description": "Pannello amministrativo."},
     ],
+    generate_unique_id_function=lambda route: _generate_unique_operation_id(route),
 )
 ACTIVE_SESSIONS: dict[str, int] = {}
+
+
+def _generate_unique_operation_id(route: APIRoute) -> str:
+    methods = "_".join(sorted(method.lower() for method in route.methods or []))
+    line_number = getattr(getattr(route.endpoint, "__code__", None), "co_firstlineno", 0)
+    normalized_path = route.path_format.strip("/").replace("/", "_").replace("{", "").replace("}", "")
+    return f"{route.name}_{methods}_{normalized_path}_{line_number}"
+
+
+def _form_example_payload(example: dict[str, object]) -> dict[str, object]:
+    properties: dict[str, dict[str, str]] = {}
+    required = []
+    for key, value in example.items():
+        required.append(key)
+        if isinstance(value, bool):
+            value_type = "boolean"
+        elif isinstance(value, int):
+            value_type = "integer"
+        else:
+            value_type = "string"
+        properties[key] = {"type": value_type}
+
+    return {
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/x-www-form-urlencoded": {
+                    "schema": {
+                        "type": "object",
+                        "properties": properties,
+                        "required": required,
+                    },
+                    "example": example,
+                }
+            },
+        }
+    }
+
+
+def _json_response_example(example: object, description: str = "Successful Response") -> dict[str, object]:
+    return {
+        "responses": {
+            "200": {
+                "description": description,
+                "content": {
+                    "application/json": {
+                        "example": example,
+                    }
+                },
+            }
+        }
+    }
+
+
+def _redirect_response_example(location: str = "/dashboard") -> dict[str, object]:
+    return {
+        "responses": {
+            "302": {
+                "description": f"Redirect to {location}",
+                "content": {
+                    "text/plain": {
+                        "example": f"Redirect to {location}",
+                    }
+                },
+            }
+        }
+    }
+
+
+def _merge_openapi_metadata(operation: dict[str, object], extra: dict[str, object]) -> None:
+    if "requestBody" in extra:
+        operation["requestBody"] = extra["requestBody"]
+
+    if "responses" in extra:
+        responses = operation.setdefault("responses", {})
+        for status_code, response_spec in extra["responses"].items():
+            existing_response = responses.setdefault(status_code, {"description": "Successful Response"})
+            if "content" in response_spec:
+                existing_content = existing_response.setdefault("content", {})
+                for content_type, content_spec in response_spec["content"].items():
+                    existing_content[content_type] = content_spec
+
+
+def _build_swagger_examples() -> dict[tuple[str, str], dict[str, object]]:
+    return {
+        ("/login/submit", "post"): {
+            **_form_example_payload({"username": "Russo", "password": "1234"}),
+            **_redirect_response_example("/dashboard"),
+        },
+        ("/register/submit", "post"): {
+            **_form_example_payload(
+                {
+                    "username": "newPlayer",
+                    "email": "newplayer@email.com",
+                    "password": "StrongPass123!",
+                    "confirm": "StrongPass123!",
+                }
+            ),
+            "responses": {
+                "200": {
+                    "description": "Registration confirmation page",
+                    "content": {"text/plain": {"example": "Registrazione completata con successo"}},
+                }
+            },
+        },
+        ("/creator/request", "post"): {
+            **_form_example_payload({"message": "Vorrei gestire un team competitivo."}),
+            **_redirect_response_example("/dashboard"),
+        },
+        ("/creator/teams/create", "post"): {
+            **_form_example_payload(
+                {"team_name": "NightRaiders", "game": "Valorant", "looking_for": "Duelist"}
+            ),
+            **_redirect_response_example("/dashboard"),
+        },
+        ("/creator/teams/{team_id}/recruitment", "post"): {
+            **_form_example_payload({"game": "Rocket League", "looking_for": "Defender"}),
+            **_redirect_response_example("/dashboard"),
+        },
+        ("/creator/teams/{team_id}/tryouts/create", "post"): {
+            **_form_example_payload(
+                {"scheduled_at": "2026-06-01T18:00:00", "slots": 4, "notes": "Provino aperto ai player ranked."}
+            ),
+            **_redirect_response_example("/dashboard"),
+        },
+        ("/creator/teams/{team_id}/delete", "post"): _redirect_response_example("/dashboard"),
+        ("/creator/tryouts/{tryout_id}/delete", "post"): _redirect_response_example("/dashboard"),
+        ("/request/submit", "post"): {
+            **_form_example_payload(
+                {
+                    "game": "Valorant",
+                    "rank": "Gold",
+                    "role": "Duelist",
+                    "attack_main": "",
+                    "defense_main": "",
+                    "preferred_mode": "",
+                    "notes": "Gioco in fascia serale e cerco team competitivo.",
+                }
+            ),
+            **_redirect_response_example("/dashboard"),
+        },
+        ("/admin/users/{target_user_id}/update", "post"): {
+            **_form_example_payload({"username": "MarcoPro", "email": "marcopro@email.com"}),
+            **_redirect_response_example("/dashboard"),
+        },
+        ("/admin/users/{target_user_id}/delete", "post"): _redirect_response_example("/dashboard"),
+        ("/admin/users/{target_user_id}/set-creator", "post"): _redirect_response_example("/dashboard"),
+        ("/admin/users/{target_user_id}/unset-creator", "post"): _redirect_response_example("/dashboard"),
+        ("/admin/creator-requests/{request_id}/approve", "post"): _redirect_response_example("/dashboard"),
+        ("/admin/creator-requests/{request_id}/reject", "post"): _redirect_response_example("/dashboard"),
+        ("/creator/request/{request_id}/ack", "post"): _redirect_response_example("/dashboard"),
+        ("/health/json", "get"): _json_response_example({"status": "ok"}),
+        (
+            "/tables",
+            "get",
+        ): _json_response_example(
+            {
+                "database": ["user", "team", "match"],
+                "tables": [
+                    {
+                        "table": "user",
+                        "columns": [
+                            {"name": "id", "type": "INTEGER", "nullable": False, "primary_key": True},
+                            {"name": "username", "type": "VARCHAR(50)", "nullable": False, "primary_key": False},
+                        ],
+                    }
+                ],
+            }
+        ),
+        (
+            "/examples",
+            "get",
+        ): _json_response_example(
+            {
+                "user": {"id": 1, "username": "proGamer", "email": "pro@email.com"},
+                "team": {"id": 10, "name": "NightRaiders", "creator_id": 1, "members": []},
+                "game": {"id": 2, "name": "Valorant", "genre": "FPS"},
+                "match": {
+                    "id": 100,
+                    "scheduled_at": "2026-06-01T18:00:00",
+                    "game_id": 2,
+                    "team1_id": 10,
+                    "team2_id": 11,
+                },
+            }
+        ),
+    }
+
+
+def custom_openapi() -> dict[str, object]:
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    examples = _build_swagger_examples()
+    for path, methods in examples.items():
+        operation = schema.get("paths", {}).get(path[0] if isinstance(path, tuple) else path, {})
+        method_name = path[1] if isinstance(path, tuple) else ""
+        if method_name and method_name in operation:
+            _merge_openapi_metadata(operation[method_name], methods)
+
+    app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 GAME_OPTIONS = ["Valorant", "Rainbow Six Siege", "Fortnite", "Rocket League"]
