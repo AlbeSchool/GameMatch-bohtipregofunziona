@@ -1518,11 +1518,9 @@ def examples() -> dict[str, object]:
 
 
 @app.get("/dashboard")
-def dashboard(request: Request, user_id: Optional[int] = None, db: Session = Depends(get_db)) -> HTMLResponse:
+def dashboard(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
     """Dashboard separata per admin e utenti normali"""
     current_user = _get_user_from_session(request, db)
-    if not current_user and user_id is not None:
-        current_user = db.query(User).filter(User.id == user_id).first()
     if not current_user:
         return RedirectResponse(url="/login", status_code=302)
 
