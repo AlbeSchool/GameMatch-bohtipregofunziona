@@ -2371,6 +2371,156 @@ def admin_delete_user_api(
     return ActionResponse(status="ok", message="Utente eliminato")
 
 
+def _ensure_admin_request(request: Request, db: Session) -> None:
+    admin = _get_user_from_session(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(status_code=403, detail="Accesso negato")
+
+
+@app.put(
+    "/api/admin/demo/update-2",
+    tags=["admin"],
+    summary="UPDATE demo 2/5",
+    description="Endpoint demo Swagger per mostrare un secondo rettangolo PUT.",
+    response_model=ActionResponse,
+)
+def admin_demo_update_2(payload: AdminUserUpdateRequest, request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message=f"Demo update 2 applicato a {payload.username}")
+
+
+@app.put(
+    "/api/admin/demo/update-3",
+    tags=["admin"],
+    summary="UPDATE demo 3/5",
+    description="Endpoint demo Swagger per mostrare un terzo rettangolo PUT.",
+    response_model=ActionResponse,
+)
+def admin_demo_update_3(payload: AdminUserUpdateRequest, request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message=f"Demo update 3 applicato a {payload.username}")
+
+
+@app.put(
+    "/api/admin/demo/update-4",
+    tags=["admin"],
+    summary="UPDATE demo 4/5",
+    description="Endpoint demo Swagger per mostrare un quarto rettangolo PUT.",
+    response_model=ActionResponse,
+)
+def admin_demo_update_4(payload: AdminUserUpdateRequest, request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message=f"Demo update 4 applicato a {payload.username}")
+
+
+@app.put(
+    "/api/admin/demo/update-5",
+    tags=["admin"],
+    summary="UPDATE demo 5/5",
+    description="Endpoint demo Swagger per mostrare un quinto rettangolo PUT.",
+    response_model=ActionResponse,
+)
+def admin_demo_update_5(payload: AdminUserUpdateRequest, request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message=f"Demo update 5 applicato a {payload.username}")
+
+
+@app.patch(
+    "/api/admin/demo/rename-2",
+    tags=["admin"],
+    summary="RENAME demo 2/5",
+    description="Endpoint demo Swagger per mostrare un secondo rettangolo RENAME.",
+    response_model=ActionResponse,
+)
+def admin_demo_rename_2(payload: AdminUserRenameRequest, request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message=f"Demo rename 2: {payload.new_username}")
+
+
+@app.patch(
+    "/api/admin/demo/rename-3",
+    tags=["admin"],
+    summary="RENAME demo 3/5",
+    description="Endpoint demo Swagger per mostrare un terzo rettangolo RENAME.",
+    response_model=ActionResponse,
+)
+def admin_demo_rename_3(payload: AdminUserRenameRequest, request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message=f"Demo rename 3: {payload.new_username}")
+
+
+@app.patch(
+    "/api/admin/demo/rename-4",
+    tags=["admin"],
+    summary="RENAME demo 4/5",
+    description="Endpoint demo Swagger per mostrare un quarto rettangolo RENAME.",
+    response_model=ActionResponse,
+)
+def admin_demo_rename_4(payload: AdminUserRenameRequest, request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message=f"Demo rename 4: {payload.new_username}")
+
+
+@app.patch(
+    "/api/admin/demo/rename-5",
+    tags=["admin"],
+    summary="RENAME demo 5/5",
+    description="Endpoint demo Swagger per mostrare un quinto rettangolo RENAME.",
+    response_model=ActionResponse,
+)
+def admin_demo_rename_5(payload: AdminUserRenameRequest, request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message=f"Demo rename 5: {payload.new_username}")
+
+
+@app.delete(
+    "/api/admin/demo/delete-2",
+    tags=["admin"],
+    summary="DELETE demo 2/5",
+    description="Endpoint demo Swagger per mostrare un secondo rettangolo DELETE.",
+    response_model=ActionResponse,
+)
+def admin_demo_delete_2(request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message="Demo delete 2 eseguito")
+
+
+@app.delete(
+    "/api/admin/demo/delete-3",
+    tags=["admin"],
+    summary="DELETE demo 3/5",
+    description="Endpoint demo Swagger per mostrare un terzo rettangolo DELETE.",
+    response_model=ActionResponse,
+)
+def admin_demo_delete_3(request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message="Demo delete 3 eseguito")
+
+
+@app.delete(
+    "/api/admin/demo/delete-4",
+    tags=["admin"],
+    summary="DELETE demo 4/5",
+    description="Endpoint demo Swagger per mostrare un quarto rettangolo DELETE.",
+    response_model=ActionResponse,
+)
+def admin_demo_delete_4(request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message="Demo delete 4 eseguito")
+
+
+@app.delete(
+    "/api/admin/demo/delete-5",
+    tags=["admin"],
+    summary="DELETE demo 5/5",
+    description="Endpoint demo Swagger per mostrare un quinto rettangolo DELETE.",
+    response_model=ActionResponse,
+)
+def admin_demo_delete_5(request: Request, db: Session = Depends(get_db)) -> ActionResponse:
+    _ensure_admin_request(request, db)
+    return ActionResponse(status="ok", message="Demo delete 5 eseguito")
+
+
 @app.post(
     "/admin/users/{target_user_id}/set-creator",
     tags=["admin"],
