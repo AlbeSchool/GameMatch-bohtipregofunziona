@@ -365,3 +365,52 @@ class RegisterResponse(BaseModel):
             ]
         }
     )
+
+
+class AdminUserUpdateRequest(BaseModel):
+    """Schema JSON per aggiornare username/email di un utente"""
+    username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "username": "MarcoPro",
+                    "email": "marcopro@email.com",
+                }
+            ]
+        }
+    )
+
+
+class AdminUserRenameRequest(BaseModel):
+    """Schema JSON per rinominare un utente"""
+    new_username: str = Field(..., min_length=3, max_length=50)
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "new_username": "MarcoLegend",
+                }
+            ]
+        }
+    )
+
+
+class ActionResponse(BaseModel):
+    """Risposta standard per azioni amministrative"""
+    status: str
+    message: str
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "status": "ok",
+                    "message": "Operazione completata",
+                }
+            ]
+        }
+    )

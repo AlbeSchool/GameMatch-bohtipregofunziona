@@ -17,7 +17,19 @@ from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
 from app.database import engine, init_db, get_db
-from app.schemas import GameRead, MatchRead, TeamRead, UserRead, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse
+from app.schemas import (
+    GameRead,
+    MatchRead,
+    TeamRead,
+    UserRead,
+    LoginRequest,
+    LoginResponse,
+    RegisterRequest,
+    RegisterResponse,
+    AdminUserUpdateRequest,
+    AdminUserRenameRequest,
+    ActionResponse,
+)
 from app.auth import authenticate_user, create_user, get_all_users, get_user_by_username, verify_password
 from app.models import (
     User,
@@ -97,6 +109,36 @@ def _json_response_example(example: object, description: str = "Successful Respo
                     }
                 },
             }
+        }
+    }
+
+
+def _json_request_payload(example: dict[str, object]) -> dict[str, object]:
+    properties: dict[str, dict[str, str]] = {}
+    required = []
+    for key, value in example.items():
+        required.append(key)
+        if isinstance(value, bool):
+            value_type = "boolean"
+        elif isinstance(value, int):
+            value_type = "integer"
+        else:
+            value_type = "string"
+        properties[key] = {"type": value_type}
+
+    return {
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": properties,
+                        "required": required,
+                    },
+                    "example": example,
+                }
+            },
         }
     }
 
@@ -192,6 +234,17 @@ def _build_swagger_examples() -> dict[tuple[str, str], dict[str, object]]:
             **_form_example_payload({"username": "MarcoPro", "email": "marcopro@email.com"}),
             **_redirect_response_example("/dashboard"),
         },
+        ("/api/admin/users/{target_user_id}", "put"): {
+            **_json_request_payload({"username": "MarcoPro", "email": "marcopro@email.com"}),
+            **_json_response_example({"status": "ok", "message": "Utente aggiornato"}),
+        },
+        ("/api/admin/users/{target_user_id}/rename", "patch"): {
+            **_json_request_payload({"new_username": "MarcoLegend"}),
+            **_json_response_example({"status": "ok", "message": "Username aggiornato"}),
+        },
+        ("/api/admin/users/{target_user_id}", "delete"): _json_response_example(
+            {"status": "ok", "message": "Utente eliminato"}
+        ),
         ("/admin/users/{target_user_id}/delete", "post"): _redirect_response_example("/dashboard"),
         ("/admin/users/{target_user_id}/set-creator", "post"): _redirect_response_example("/dashboard"),
         ("/admin/users/{target_user_id}/unset-creator", "post"): _redirect_response_example("/dashboard"),
@@ -2021,6 +2074,73 @@ def admin_update_user(
     return RedirectResponse(url="/dashboard", status_code=302)
 
 
+@app.put(
+    "/api/admin/users/{target_user_id}",
+    tags=["admin"],
+    summary="Update utente (API)",
+    description="Aggiorna username ed email via JSON (metodo PUT).",
+    response_model=ActionResponse,
+)
+def admin_update_user_api(
+    target_user_id: int,
+    payload: AdminUserUpdateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ActionResponse:
+    admin = _get_user_from_session(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(status_code=403, detail="Accesso negato")
+
+    target = db.query(User).filter(User.id == target_user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    if target.is_admin:
+        raise HTTPException(status_code=400, detail="Non puoi modificare un admin")
+
+    target.username = payload.username.strip()
+    target.email = payload.email
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Username o email gia in uso")
+
+    return ActionResponse(status="ok", message="Utente aggiornato")
+
+
+@app.patch(
+    "/api/admin/users/{target_user_id}/rename",
+    tags=["admin"],
+    summary="Rinomina utente (API)",
+    description="Rinomina un utente via JSON (metodo PATCH).",
+    response_model=ActionResponse,
+)
+def admin_rename_user_api(
+    target_user_id: int,
+    payload: AdminUserRenameRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ActionResponse:
+    admin = _get_user_from_session(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(status_code=403, detail="Accesso negato")
+
+    target = db.query(User).filter(User.id == target_user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    if target.is_admin:
+        raise HTTPException(status_code=400, detail="Non puoi rinominare un admin")
+
+    target.username = payload.new_username.strip()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Username gia in uso")
+
+    return ActionResponse(status="ok", message="Username aggiornato")
+
+
 @app.post(
     "/admin/users/{target_user_id}/delete",
     tags=["admin"],
@@ -2045,6 +2165,33 @@ def admin_delete_user(
     db.delete(target)
     db.commit()
     return RedirectResponse(url="/dashboard", status_code=302)
+
+
+@app.delete(
+    "/api/admin/users/{target_user_id}",
+    tags=["admin"],
+    summary="Delete utente (API)",
+    description="Elimina un utente non admin via metodo DELETE.",
+    response_model=ActionResponse,
+)
+def admin_delete_user_api(
+    target_user_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> ActionResponse:
+    admin = _get_user_from_session(request, db)
+    if not admin or not admin.is_admin:
+        raise HTTPException(status_code=403, detail="Accesso negato")
+
+    target = db.query(User).filter(User.id == target_user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    if target.is_admin:
+        raise HTTPException(status_code=400, detail="Non puoi eliminare un admin")
+
+    db.delete(target)
+    db.commit()
+    return ActionResponse(status="ok", message="Utente eliminato")
 
 
 @app.post(
