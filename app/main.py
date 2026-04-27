@@ -149,6 +149,83 @@ def _json_request_payload(example: dict[str, object]) -> dict[str, object]:
     }
 
 
+def _form_examples_payload(examples: dict[str, dict[str, object]]) -> dict[str, object]:
+    sample = next(iter(examples.values()))
+    properties: dict[str, dict[str, str]] = {}
+    required = []
+    for key, value in sample.items():
+        required.append(key)
+        if isinstance(value, bool):
+            value_type = "boolean"
+        elif isinstance(value, int):
+            value_type = "integer"
+        else:
+            value_type = "string"
+        properties[key] = {"type": value_type}
+
+    return {
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/x-www-form-urlencoded": {
+                    "schema": {
+                        "type": "object",
+                        "properties": properties,
+                        "required": required,
+                    },
+                    "examples": {name: {"value": value} for name, value in examples.items()},
+                }
+            },
+        }
+    }
+
+
+def _json_request_examples_payload(examples: dict[str, dict[str, object]]) -> dict[str, object]:
+    sample = next(iter(examples.values()))
+    properties: dict[str, dict[str, str]] = {}
+    required = []
+    for key, value in sample.items():
+        required.append(key)
+        if isinstance(value, bool):
+            value_type = "boolean"
+        elif isinstance(value, int):
+            value_type = "integer"
+        else:
+            value_type = "string"
+        properties[key] = {"type": value_type}
+
+    return {
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": properties,
+                        "required": required,
+                    },
+                    "examples": {name: {"value": value} for name, value in examples.items()},
+                }
+            },
+        }
+    }
+
+
+def _json_response_examples(examples: dict[str, object], description: str = "Successful Response") -> dict[str, object]:
+    return {
+        "responses": {
+            "200": {
+                "description": description,
+                "content": {
+                    "application/json": {
+                        "examples": {name: {"value": value} for name, value in examples.items()},
+                    }
+                },
+            }
+        }
+    }
+
+
 def _redirect_response_example(location: str = "/dashboard") -> dict[str, object]:
     return {
         "responses": {
@@ -179,6 +256,86 @@ def _merge_openapi_metadata(operation: dict[str, object], extra: dict[str, objec
 
 
 def _build_swagger_examples() -> dict[tuple[str, str], dict[str, object]]:
+    post_examples = {
+        "valorant": {
+            "game": "Valorant",
+            "rank": "Gold",
+            "role": "Duelist",
+            "attack_main": "",
+            "defense_main": "",
+            "preferred_mode": "",
+            "notes": "Gioco in fascia serale e cerco team competitivo.",
+        },
+        "fortnite": {
+            "game": "Fortnite",
+            "rank": "Platinum",
+            "role": "Flex",
+            "attack_main": "",
+            "defense_main": "",
+            "preferred_mode": "",
+            "notes": "Cerco team orientato ai tornei del weekend.",
+        },
+        "rocket_league": {
+            "game": "Rocket League",
+            "rank": "Diamond",
+            "role": "Defender",
+            "attack_main": "",
+            "defense_main": "",
+            "preferred_mode": "",
+            "notes": "Disponibile 4 sere a settimana.",
+        },
+        "r6_entry": {
+            "game": "Rainbow Six Siege",
+            "rank": "Gold",
+            "role": "",
+            "attack_main": "Ash",
+            "defense_main": "Mute",
+            "preferred_mode": "Entry",
+            "notes": "Preferisco team aggressivo con call pulite.",
+        },
+        "r6_anchor": {
+            "game": "Rainbow Six Siege",
+            "rank": "Platinum",
+            "role": "",
+            "attack_main": "Thermite",
+            "defense_main": "Rook",
+            "preferred_mode": "Anchor",
+            "notes": "Cerco roster stabile per ranked serie.",
+        },
+    }
+
+    update_examples = {
+        "basic_update": {"username": "MarcoPro", "email": "marcopro@email.com"},
+        "nick_short": {"username": "MPro", "email": "mpro@email.com"},
+        "mail_change": {"username": "Marco", "email": "marco.new@email.com"},
+        "esports_tag": {"username": "MarcoGG", "email": "marcogg@email.com"},
+        "final_alias": {"username": "MarcoLegend", "email": "legend@email.com"},
+    }
+
+    rename_examples = {
+        "rename_1": {"new_username": "MarcoLegend"},
+        "rename_2": {"new_username": "NightWolf"},
+        "rename_3": {"new_username": "AimMaster"},
+        "rename_4": {"new_username": "ControllerX"},
+        "rename_5": {"new_username": "FlexCaptain"},
+    }
+
+    delete_examples = {
+        "deleted_user": {"status": "ok", "message": "Utente eliminato"},
+        "already_removed": {"status": "ok", "message": "Utente gia rimosso"},
+        "cleanup": {"status": "ok", "message": "Account eliminato con successo"},
+        "archive": {"status": "ok", "message": "Utente rimosso e storico conservato"},
+        "bulk_case": {"status": "ok", "message": "Utente eliminato nel flusso admin"},
+    }
+
+    get_examples = {
+        "ok": {"status": "ok"},
+        "ok_uptime": {"status": "ok", "uptime": "72h"},
+        "ok_region": {"status": "ok", "region": "eu-central"},
+        "ok_build": {"status": "ok", "build": "1.0.0"},
+        "ok_ready": {"status": "ok", "ready": True},
+    }
+
     return {
         ("/login/submit", "post"): {
             **_form_example_payload({"username": "Russo", "password": "1234"}),
@@ -223,17 +380,7 @@ def _build_swagger_examples() -> dict[tuple[str, str], dict[str, object]]:
         ("/creator/teams/{team_id}/delete", "post"): _redirect_response_example("/dashboard"),
         ("/creator/tryouts/{tryout_id}/delete", "post"): _redirect_response_example("/dashboard"),
         ("/request/submit", "post"): {
-            **_form_example_payload(
-                {
-                    "game": "Valorant",
-                    "rank": "Gold",
-                    "role": "Duelist",
-                    "attack_main": "",
-                    "defense_main": "",
-                    "preferred_mode": "",
-                    "notes": "Gioco in fascia serale e cerco team competitivo.",
-                }
-            ),
+            **_form_examples_payload(post_examples),
             **_redirect_response_example("/dashboard"),
         },
         ("/admin/users/{target_user_id}/update", "post"): {
@@ -241,23 +388,37 @@ def _build_swagger_examples() -> dict[tuple[str, str], dict[str, object]]:
             **_redirect_response_example("/dashboard"),
         },
         ("/api/admin/users/{target_user_id}", "put"): {
-            **_json_request_payload({"username": "MarcoPro", "email": "marcopro@email.com"}),
-            **_json_response_example({"status": "ok", "message": "Utente aggiornato"}),
+            **_json_request_examples_payload(update_examples),
+            **_json_response_examples(
+                {
+                    "updated": {"status": "ok", "message": "Utente aggiornato"},
+                    "mail_only": {"status": "ok", "message": "Email aggiornata"},
+                    "username_only": {"status": "ok", "message": "Username aggiornato"},
+                    "normalized": {"status": "ok", "message": "Dati utente normalizzati"},
+                    "full_profile": {"status": "ok", "message": "Profilo admin aggiornato"},
+                }
+            ),
         },
         ("/api/admin/users/{target_user_id}/rename", "patch"): {
-            **_json_request_payload({"new_username": "MarcoLegend"}),
-            **_json_response_example({"status": "ok", "message": "Username aggiornato"}),
+            **_json_request_examples_payload(rename_examples),
+            **_json_response_examples(
+                {
+                    "renamed": {"status": "ok", "message": "Username aggiornato"},
+                    "renamed_short": {"status": "ok", "message": "Nickname aggiornato"},
+                    "renamed_tag": {"status": "ok", "message": "Tag utente aggiornato"},
+                    "renamed_final": {"status": "ok", "message": "Rinomina completata"},
+                    "renamed_sync": {"status": "ok", "message": "Username sincronizzato"},
+                }
+            ),
         },
-        ("/api/admin/users/{target_user_id}", "delete"): _json_response_example(
-            {"status": "ok", "message": "Utente eliminato"}
-        ),
+        ("/api/admin/users/{target_user_id}", "delete"): _json_response_examples(delete_examples),
         ("/admin/users/{target_user_id}/delete", "post"): _redirect_response_example("/dashboard"),
         ("/admin/users/{target_user_id}/set-creator", "post"): _redirect_response_example("/dashboard"),
         ("/admin/users/{target_user_id}/unset-creator", "post"): _redirect_response_example("/dashboard"),
         ("/admin/creator-requests/{request_id}/approve", "post"): _redirect_response_example("/dashboard"),
         ("/admin/creator-requests/{request_id}/reject", "post"): _redirect_response_example("/dashboard"),
         ("/creator/request/{request_id}/ack", "post"): _redirect_response_example("/dashboard"),
-        ("/health/json", "get"): _json_response_example({"status": "ok"}),
+        ("/health/json", "get"): _json_response_examples(get_examples),
         (
             "/tables",
             "get",
